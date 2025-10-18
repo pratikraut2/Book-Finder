@@ -1,5 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import BookCard from "./BookCard";
+import Logo from "./Logo";
+import { supabase, getUserId } from "./supabaseClient";
 
 const BookFinder = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -7,6 +9,12 @@ const BookFinder = () => {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [favorites, setFavorites] = useState([]);
+  const [sortBy, setSortBy] = useState("relevance");
+  const [filterYear, setFilterYear] = useState("");
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const booksPerPage = 12;
 
   // --- Search Function ---
   const searchBooks = async () => {
@@ -69,20 +77,143 @@ const BookFinder = () => {
     }
   };
 
+  useEffect(() => {
+    loadFavorites();
+  }, []);
+
+  const loadFavorites = async () => {
+    const userId = getUserId();
+    const { data, error } = await supabase
+      .from('favorites')
+      .select('*')
+      .eq('user_id', userId);
+
+    if (!error && data) {
+      setFavorites(data);
+    }
+  };
+
+  const toggleFavorite = async (book) => {
+    const userId = getUserId();
+    const isFavorited = favorites.some(fav => fav.book_key === book.key);
+
+    if (isFavorited) {
+      const { error } = await supabase
+        .from('favorites')
+        .delete()
+        .eq('user_id', userId)
+        .eq('book_key', book.key);
+
+      if (!error) {
+        setFavorites(favorites.filter(fav => fav.book_key !== book.key));
+      }
+    } else {
+      const { data, error } = await supabase
+        .from('favorites')
+        .insert([{
+          user_id: userId,
+          book_key: book.key,
+          book_title: book.title,
+          book_author: book.author,
+          book_cover: book.cover,
+          book_year: book.year,
+          book_publisher: book.publisher
+        }])
+        .select();
+
+      if (!error && data) {
+        setFavorites([...favorites, data[0]]);
+      }
+    }
+  };
+
+  const getFilteredAndSortedBooks = () => {
+    let filtered = showFavoritesOnly
+      ? favorites.map(fav => ({
+          key: fav.book_key,
+          title: fav.book_title,
+          author: fav.book_author,
+          cover: fav.book_cover,
+          year: fav.book_year,
+          publisher: fav.book_publisher,
+          subjects: [],
+          pageCount: "Unknown"
+        }))
+      : books;
+
+    if (filterYear) {
+      filtered = filtered.filter(book =>
+        book.year.toString().includes(filterYear)
+      );
+    }
+
+    const sorted = [...filtered];
+    switch (sortBy) {
+      case "title":
+        sorted.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      case "year_asc":
+        sorted.sort((a, b) => {
+          const yearA = parseInt(a.year) || 0;
+          const yearB = parseInt(b.year) || 0;
+          return yearA - yearB;
+        });
+        break;
+      case "year_desc":
+        sorted.sort((a, b) => {
+          const yearA = parseInt(a.year) || 0;
+          const yearB = parseInt(b.year) || 0;
+          return yearB - yearA;
+        });
+        break;
+      case "author":
+        sorted.sort((a, b) => a.author.localeCompare(b.author));
+        break;
+      default:
+        break;
+    }
+
+    return sorted;
+  };
+
+  const displayedBooks = getFilteredAndSortedBooks();
+  const totalPages = Math.ceil(displayedBooks.length / booksPerPage);
+  const paginatedBooks = displayedBooks.slice(
+    (currentPage - 1) * booksPerPage,
+    currentPage * booksPerPage
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [sortBy, filterYear, showFavoritesOnly, books]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* ---------- Header ---------- */}
       <header className="text-center mb-12">
-        <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full mb-6 shadow-lg">
-          <span className="text-3xl">📚</span>
+        <div className="inline-flex items-center justify-center mb-6">
+          <Logo size={100} />
         </div>
-        <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+        <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent mb-4">
           Book Finder
         </h1>
         <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
           Discover your next great read from millions of books worldwide
         </p>
+        {favorites.length > 0 && (
+          <div className="mt-6">
+            <button
+              onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+              className={`px-6 py-2.5 rounded-full font-medium transition-all duration-200 shadow-md hover:shadow-lg
+                ${showFavoritesOnly
+                  ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white'
+                  : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-red-300'
+                }`}
+            >
+              {showFavoritesOnly ? '❤️ Showing Favorites' : `🤍 View ${favorites.length} Favorites`}
+            </button>
+          </div>
+        )}
       </header>
 
       {/* ---------- Search Section ---------- */}
@@ -131,6 +262,61 @@ const BookFinder = () => {
             )}
           </button>
         </div>
+
+        {!showFavoritesOnly && books.length > 0 && (
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Sort by
+                </label>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white
+                           focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500
+                           transition-all duration-200"
+                >
+                  <option value="relevance">Relevance</option>
+                  <option value="title">Title (A-Z)</option>
+                  <option value="author">Author (A-Z)</option>
+                  <option value="year_desc">Newest First</option>
+                  <option value="year_asc">Oldest First</option>
+                </select>
+              </div>
+
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Filter by year
+                </label>
+                <input
+                  type="text"
+                  value={filterYear}
+                  onChange={(e) => setFilterYear(e.target.value)}
+                  placeholder="e.g., 2020"
+                  className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white
+                           focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500
+                           transition-all duration-200"
+                />
+              </div>
+
+              {(sortBy !== "relevance" || filterYear) && (
+                <div className="flex items-end">
+                  <button
+                    onClick={() => {
+                      setSortBy("relevance");
+                      setFilterYear("");
+                    }}
+                    className="px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200
+                             transition-all duration-200 font-medium whitespace-nowrap"
+                  >
+                    Clear Filters
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ---------- Error Message ---------- */}
@@ -155,31 +341,121 @@ const BookFinder = () => {
         </div>
       )}
 
-      {/* ---------- Results Count ---------- */}
-      {books.length > 0 && (
-        <div className="mb-8 p-4 bg-green-50 border border-green-200 rounded-xl">
-          <p className="text-green-800 font-medium flex items-center gap-2">
-            <span className="text-lg">✨</span>
-            Found {books.length} amazing books for you
+      {displayedBooks.length > 0 && (
+        <div className="mb-8 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl">
+          <p className="text-green-800 font-medium flex items-center justify-between flex-wrap gap-2">
+            <span className="flex items-center gap-2">
+              <span className="text-lg">✨</span>
+              {showFavoritesOnly
+                ? `${displayedBooks.length} favorite book${displayedBooks.length !== 1 ? 's' : ''}`
+                : `Found ${displayedBooks.length} amazing book${displayedBooks.length !== 1 ? 's' : ''}`
+              }
+            </span>
+            {!showFavoritesOnly && (filterYear || sortBy !== "relevance") && (
+              <span className="text-sm text-green-600">
+                (filtered & sorted)
+              </span>
+            )}
           </p>
         </div>
       )}
 
-      {/* ---------- Books Grid ---------- */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
-        {books.map((book, index) => (
-          <div 
+        {paginatedBooks.map((book, index) => (
+          <div
             key={`${book.key}-${index}`}
             className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
-            style={{ animationDelay: `${index * 100}ms` }}
+            style={{ animationDelay: `${index * 50}ms` }}
           >
-            <BookCard book={book} />
+            <BookCard
+              book={book}
+              onToggleFavorite={toggleFavorite}
+              isFavorite={favorites.some(fav => fav.book_key === book.key)}
+            />
           </div>
         ))}
       </div>
 
-      {/* ---------- No Results ---------- */}
-      {books.length === 0 && !loading && searchQuery && !error && (
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 mb-8 flex-wrap">
+          <button
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+            className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+              currentPage === 1
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-white text-gray-700 hover:bg-gray-50 shadow-md hover:shadow-lg border border-gray-200'
+            }`}
+          >
+            Previous
+          </button>
+
+          <div className="flex gap-2">
+            {[...Array(totalPages)].map((_, i) => {
+              const pageNum = i + 1;
+              if (
+                pageNum === 1 ||
+                pageNum === totalPages ||
+                (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+              ) {
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`w-10 h-10 rounded-lg font-medium transition-all duration-200 ${
+                      currentPage === pageNum
+                        ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg'
+                        : 'bg-white text-gray-700 hover:bg-gray-50 shadow-md border border-gray-200'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              } else if (
+                pageNum === currentPage - 2 ||
+                pageNum === currentPage + 2
+              ) {
+                return <span key={pageNum} className="px-2 py-2 text-gray-400">...</span>;
+              }
+              return null;
+            })}
+          </div>
+
+          <button
+            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+            disabled={currentPage === totalPages}
+            className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+              currentPage === totalPages
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-white text-gray-700 hover:bg-gray-50 shadow-md hover:shadow-lg border border-gray-200'
+            }`}
+          >
+            Next
+          </button>
+        </div>
+      )}
+
+      {displayedBooks.length === 0 && !loading && !error && showFavoritesOnly && (
+        <div className="text-center py-20">
+          <div className="inline-flex items-center justify-center w-24 h-24 bg-gray-100 rounded-full mb-6">
+            <span className="text-4xl">🤍</span>
+          </div>
+          <h3 className="text-2xl font-bold text-gray-800 mb-4">No favorites yet</h3>
+          <p className="text-gray-600 text-lg mb-6 max-w-md mx-auto">
+            Start adding books to your favorites by clicking the heart icon on any book card.
+          </p>
+          <button
+            onClick={() => setShowFavoritesOnly(false)}
+            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl
+                     font-bold hover:from-blue-700 hover:to-cyan-700 transition-all duration-200
+                     shadow-md hover:shadow-lg"
+          >
+            Browse Books
+          </button>
+        </div>
+      )}
+
+      {books.length === 0 && !loading && searchQuery && !error && !showFavoritesOnly && (
         <div className="text-center py-20">
           <div className="inline-flex items-center justify-center w-24 h-24 bg-gray-100 rounded-full mb-6">
             <span className="text-4xl">📖</span>
