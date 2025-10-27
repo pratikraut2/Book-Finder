@@ -3,16 +3,18 @@ import React from "react";
 const BookCard = ({ book }) => {
   return (
     <div
-      className="border border-gray-300 rounded-lg p-4 bg-white shadow-md 
-                 hover:-translate-y-1 hover:shadow-lg transition duration-200 cursor-pointer"
+      className="group bg-white/90 backdrop-blur-sm border border-white/40 rounded-2xl p-6 shadow-lg 
+                 hover:-translate-y-2 hover:shadow-2xl transition-all duration-300 cursor-pointer
+                 hover:bg-white/95 hover:border-white/60"
     >
       {/* ---------- Book Cover ---------- */}
-      <div className="text-center mb-3">
+      <div className="text-center mb-4 relative">
         {book.cover ? (
           <img
             src={book.cover}
             alt={`Cover of ${book.title}`}
-            className="w-[120px] h-[160px] object-cover rounded-md border border-gray-200 mx-auto"
+            className="w-[140px] h-[180px] object-cover rounded-xl border-2 border-gray-200 mx-auto
+                     shadow-md group-hover:shadow-lg transition-all duration-300 group-hover:scale-105"
             onError={(e) => {
               e.target.style.display = "none";
               e.target.nextSibling.style.display = "flex";
@@ -22,52 +24,63 @@ const BookCard = ({ book }) => {
 
         {/* Fallback if no cover */}
         <div
-          className={`w-[120px] h-[160px] bg-gray-100 items-center justify-center mx-auto rounded-md border border-gray-300 ${
+          className={`w-[140px] h-[180px] bg-gradient-to-br from-gray-100 to-gray-200 items-center justify-center mx-auto rounded-xl border-2 border-gray-300 shadow-md ${
             book.cover ? "hidden" : "flex"
           }`}
         >
-          <span className="text-2xl">📚</span>
+          <span className="text-4xl opacity-60">📚</span>
         </div>
       </div>
 
       {/* ---------- Book Details ---------- */}
       <div>
         <h3
-          className="mb-2 text-base font-bold text-gray-800 leading-snug line-clamp-2 h-10"
+          className="mb-3 text-lg font-bold text-gray-800 leading-tight line-clamp-2 h-14
+                   group-hover:text-blue-600 transition-colors duration-200"
         >
           {book.title}
         </h3>
 
-        <p className="text-sm text-gray-600 mb-1">
-          <strong>Author:</strong> {book.author}
+        <p className="text-sm text-gray-700 mb-2 flex items-center gap-2">
+          <span className="text-blue-500">👤</span>
+          <strong className="text-gray-800">Author:</strong> 
+          <span className="text-gray-600">{book.author}</span>
         </p>
-        <p className="text-sm text-gray-600 mb-1">
-          <strong>Year:</strong> {book.year}
+        <p className="text-sm text-gray-700 mb-2 flex items-center gap-2">
+          <span className="text-green-500">📅</span>
+          <strong className="text-gray-800">Year:</strong> 
+          <span className="text-gray-600">{book.year}</span>
         </p>
-        <p className="text-sm text-gray-600 mb-1">
-          <strong>Publisher:</strong> {book.publisher}
+        <p className="text-sm text-gray-700 mb-2 flex items-center gap-2">
+          <span className="text-purple-500">🏢</span>
+          <strong className="text-gray-800">Publisher:</strong> 
+          <span className="text-gray-600">{book.publisher}</span>
         </p>
 
         {book.pageCount !== "Unknown" && (
-          <p className="text-sm text-gray-600 mb-1">
-            <strong>Pages:</strong> {book.pageCount}
+          <p className="text-sm text-gray-700 mb-2 flex items-center gap-2">
+            <span className="text-orange-500">📄</span>
+            <strong className="text-gray-800">Pages:</strong> 
+            <span className="text-gray-600">{book.pageCount}</span>
           </p>
         )}
 
         {book.isbn && (
-          <p className="text-xs text-gray-600 mb-1">
+          <p className="text-xs text-gray-600 mb-3 flex items-center gap-2">
+            <span className="text-gray-400">🔢</span>
             <strong>ISBN:</strong> {book.isbn}
           </p>
         )}
 
         {/* Subjects / Tags */}
         {book.subjects.length > 0 && (
-          <div className="mt-2">
+          <div className="mt-3 mb-4">
             {book.subjects.map((subject, index) => (
               <span
                 key={index}
-                className="inline-block bg-blue-100 text-blue-700 px-2 py-0.5 
-                           rounded-full text-[10px] mr-1 mb-1"
+                className="inline-block bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 px-3 py-1 
+                           rounded-full text-xs mr-2 mb-2 font-medium border border-blue-200
+                           hover:from-blue-200 hover:to-purple-200 transition-colors duration-200"
               >
                 {subject}
               </span>
@@ -80,10 +93,15 @@ const BookCard = ({ book }) => {
           href={`https://openlibrary.org${book.key}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="block text-center mt-3 px-3 py-2 bg-green-600 text-white 
-                     rounded-md text-sm font-bold hover:bg-green-700 transition"
+          className="block text-center mt-4 px-4 py-3 bg-gradient-to-r from-green-600 to-blue-600 text-white 
+                     rounded-xl text-sm font-bold hover:from-green-700 hover:to-blue-700 
+                     transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5
+                     group-hover:scale-105"
         >
-          📖 View Full Details
+          <span className="flex items-center justify-center gap-2">
+            📖 View Full Details
+            <span className="text-xs opacity-75">↗</span>
+          </span>
         </a>
       </div>
     </div>
