@@ -3,9 +3,9 @@ import React from "react";
 const BookCard = ({ book }) => {
   return (
     <div
-      className="group bg-white/90 backdrop-blur-sm border border-white/40 rounded-2xl p-6 shadow-lg 
+      className="group bg-white/90 backdrop-blur-sm border border-white/40 rounded-2xl p-6 shadow-lg
                  hover:-translate-y-2 hover:shadow-2xl transition-all duration-300 cursor-pointer
-                 hover:bg-white/95 hover:border-white/60"
+                 hover:bg-white/95 hover:border-white/60 w-[320px] h-[620px] flex flex-col"
     >
       {/* ---------- Book Cover ---------- */}
       <div className="text-center mb-4 relative">
@@ -33,7 +33,7 @@ const BookCard = ({ book }) => {
       </div>
 
       {/* ---------- Book Details ---------- */}
-      <div>
+      <div className="flex-1 flex flex-col overflow-hidden">
         <h3
           className="mb-3 text-lg font-bold text-gray-800 leading-tight line-clamp-2 h-14
                    group-hover:text-blue-600 transition-colors duration-200"
