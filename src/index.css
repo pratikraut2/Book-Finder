@@ -68,6 +68,7 @@
   background: linear-gradient(to bottom, #2563eb, #7c3aed);
 }
 
+/* Line clamp utility */
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
