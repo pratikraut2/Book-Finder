@@ -3,9 +3,9 @@ import React from "react";
 const BookCard = ({ book }) => {
   return (
     <div
-      className="group bg-white/90 backdrop-blur-sm border border-white/40 rounded-2xl p-6 shadow-lg 
+      className="group bg-white/90 backdrop-blur-sm border border-white/40 rounded-2xl p-6 shadow-lg
                  hover:-translate-y-2 hover:shadow-2xl transition-all duration-300 cursor-pointer
-                 hover:bg-white/95 hover:border-white/60"
+                 hover:bg-white/95 hover:border-white/60 flex flex-col h-full"
     >
       {/* ---------- Book Cover ---------- */}
       <div className="text-center mb-4 relative">
@@ -33,7 +33,7 @@ const BookCard = ({ book }) => {
       </div>
 
       {/* ---------- Book Details ---------- */}
-      <div>
+      <div className="flex flex-col flex-1">
         <h3
           className="mb-3 text-lg font-bold text-gray-800 leading-tight line-clamp-2 h-14
                    group-hover:text-blue-600 transition-colors duration-200"
@@ -84,15 +84,15 @@ const BookCard = ({ book }) => {
         )}
 
         {book.description && (
-          <p className="text-xs text-gray-600 mb-3 line-clamp-3 leading-relaxed">
+          <p className="text-xs text-gray-600 mb-3 line-clamp-2 leading-relaxed">
             {book.description.replace(/<[^>]*>/g, '')}
           </p>
         )}
 
         {/* Subjects / Tags */}
         {book.subjects.length > 0 && (
-          <div className="mt-3 mb-4">
-            {book.subjects.slice(0, 3).map((subject, index) => (
+          <div className="mb-4">
+            {book.subjects.slice(0, 2).map((subject, index) => (
               <span
                 key={index}
                 className="inline-block bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-700 px-3 py-1
@@ -104,6 +104,9 @@ const BookCard = ({ book }) => {
             ))}
           </div>
         )}
+
+        {/* Spacer to push button to bottom */}
+        <div className="flex-1"></div>
 
         {/* View Full Details Button */}
         <a
