@@ -72,15 +72,32 @@ const BookCard = ({ book }) => {
           </p>
         )}
 
+        {book.rating && (
+          <div className="text-sm mb-3 flex items-center gap-2">
+            <span className="text-yellow-500">⭐</span>
+            <strong className="text-gray-800">Rating:</strong>
+            <span className="text-gray-600">{book.rating}/5</span>
+            {book.ratingsCount && (
+              <span className="text-xs text-gray-500">({book.ratingsCount} reviews)</span>
+            )}
+          </div>
+        )}
+
+        {book.description && (
+          <p className="text-xs text-gray-600 mb-3 line-clamp-3 leading-relaxed">
+            {book.description.replace(/<[^>]*>/g, '')}
+          </p>
+        )}
+
         {/* Subjects / Tags */}
         {book.subjects.length > 0 && (
           <div className="mt-3 mb-4">
-            {book.subjects.map((subject, index) => (
+            {book.subjects.slice(0, 3).map((subject, index) => (
               <span
                 key={index}
-                className="inline-block bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 px-3 py-1 
+                className="inline-block bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-700 px-3 py-1
                            rounded-full text-xs mr-2 mb-2 font-medium border border-blue-200
-                           hover:from-blue-200 hover:to-purple-200 transition-colors duration-200"
+                           hover:from-blue-200 hover:to-cyan-200 transition-colors duration-200"
               >
                 {subject}
               </span>
@@ -90,16 +107,16 @@ const BookCard = ({ book }) => {
 
         {/* View Full Details Button */}
         <a
-          href={`https://openlibrary.org${book.key}`}
+          href={`https://books.google.com/books?id=${book.key}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="block text-center mt-4 px-4 py-3 bg-gradient-to-r from-green-600 to-blue-600 text-white 
-                     rounded-xl text-sm font-bold hover:from-green-700 hover:to-blue-700 
+          className="block text-center mt-4 px-4 py-3 bg-gradient-to-r from-green-600 to-blue-600 text-white
+                     rounded-xl text-sm font-bold hover:from-green-700 hover:to-blue-700
                      transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5
                      group-hover:scale-105"
         >
           <span className="flex items-center justify-center gap-2">
-            📖 View Full Details
+            📖 View on Google Books
             <span className="text-xs opacity-75">↗</span>
           </span>
         </a>

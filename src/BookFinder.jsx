@@ -19,17 +19,17 @@ const BookFinder = () => {
     setError("");
 
     try {
-      let searchParam = "";
+      let query = "";
       if (searchType === "title") {
-        searchParam = `title=${encodeURIComponent(searchQuery)}`;
+        query = `intitle:${encodeURIComponent(searchQuery)}`;
       } else if (searchType === "author") {
-        searchParam = `author=${encodeURIComponent(searchQuery)}`;
+        query = `inauthor:${encodeURIComponent(searchQuery)}`;
       } else if (searchType === "subject") {
-        searchParam = `subject=${encodeURIComponent(searchQuery)}`;
+        query = `subject:${encodeURIComponent(searchQuery)}`;
       }
 
       const response = await fetch(
-        `https://openlibrary.org/search.json?${searchParam}&limit=12`
+        `https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=12&printType=books`
       );
 
       if (!response.ok) {
@@ -38,21 +38,28 @@ const BookFinder = () => {
 
       const data = await response.json();
 
-      const formattedBooks = data.docs.map((book) => ({
-        key: book.key,
-        title: book.title,
-        author: book.author_name
-          ? book.author_name.join(", ")
-          : "Unknown Author",
-        year: book.first_publish_year || "Unknown",
-        cover: book.cover_i
-          ? `https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg`
-          : null,
-        publisher: book.publisher ? book.publisher[0] : "Unknown Publisher",
-        subjects: book.subject ? book.subject.slice(0, 3) : [],
-        isbn: book.isbn ? book.isbn[0] : null,
-        pageCount: book.number_of_pages_median || "Unknown",
-      }));
+      if (!data.items) {
+        setBooks([]);
+        return;
+      }
+
+      const formattedBooks = data.items.map((item) => {
+        const book = item.volumeInfo;
+        return {
+          key: item.id,
+          title: book.title || "Unknown Title",
+          author: book.authors ? book.authors.join(", ") : "Unknown Author",
+          year: book.publishedDate ? book.publishedDate.split("-")[0] : "Unknown",
+          cover: book.imageLinks?.thumbnail || book.imageLinks?.smallThumbnail || null,
+          publisher: book.publisher || "Unknown Publisher",
+          subjects: book.categories || [],
+          isbn: book.industryIdentifiers?.[0]?.identifier || null,
+          pageCount: book.pageCount || "Unknown",
+          description: book.description || "No description available",
+          rating: book.averageRating || null,
+          ratingsCount: book.ratingsCount || null,
+        };
+      });
 
       setBooks(formattedBooks);
     } catch (err) {
